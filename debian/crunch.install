@@ -1,3 +1,3 @@
 debian/kali-crunch.desktop usr/share/applications/
 crunch usr/bin/
-
+crunch.1 usr/share/man/man1/
