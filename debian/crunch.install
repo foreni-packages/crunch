@@ -1,0 +1,3 @@
+debian/kali-crunch.desktop usr/share/applications/
+crunch usr/bin/
+
