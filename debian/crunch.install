@@ -1,2 +1,4 @@
 crunch usr/bin/
 crunch.1 usr/share/man/man1/
+charset.lst usr/share/crunch/
+unicode_test.lst usr/share/crunch/
