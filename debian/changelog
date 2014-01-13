@@ -1,3 +1,9 @@
+crunch (3.5-0kali1) kali; urgency=low
+
+  * Upstream import
+
+ -- Mati Aharoni <muts@kali.org>  Mon, 13 Jan 2014 08:42:19 -0500
+
 crunch (3.4-1kali3) kali; urgency=low
 
   * Fixed the installation
