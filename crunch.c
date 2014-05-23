@@ -164,7 +164,10 @@
  *              removed need for -o to use -c i.e. you can use -c any time now
  *              fixed resume
  *              fixed linecount and size when using -c and/or -e
- * 
+ *  version 3.6 fix endstring problem reported and fixed by mr.atreat@gmail.com
+ *              fix a memory allocation reported and fixed by Hxcan Cai
+ *              allow Makefile to detect Darwin so make will work properly reported and fixed by Marcin
+ *
  *  TODO: Listed in no particular order
  *         add resume support to permute (I am not sure this is possible)
  *         make permute more intelligent (min, max) (I am not sure this is possible either)
@@ -222,8 +225,7 @@
  *                the ,'s will change with uppercase letters
  *                the %'s will change with numbers
  *                the ^'s will change with symbols
- *  -u          : only print words; supress file size information, aka unheard
- *                NOT NEEDED ANYMORE
+ *  -u          : The -u option disables the printpercentage thread.  This should be the last option.
  *  -z          : adds support to compress the generated output.  Must be used
  *                with -o option.  Only supports gzip, bzip, lzma, and 7z.
  *
@@ -266,7 +268,7 @@ static const wchar_t def_low_charset[] = L"abcdefghijklmnopqrstuvwxyz";
 static const wchar_t def_upp_charset[] = L"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 static const wchar_t def_num_charset[] = L"0123456789";
 static const wchar_t def_sym_charset[] = L"!@#$%^&*()-_+=~`[]{}|\\:;\"'<>,.?/ ";
-static const char version[] = "3.5";
+static const char version[] = "3.6";
 
 static size_t inc[128];
 static size_t numofelements = 0;
@@ -998,7 +1000,6 @@ unsigned long long temp;
 int check_dupes; /* need to take duplicates into account */
 unsigned long long extra_unicode_bytes = 0;
 
-
 /* parameters for counting taking dupes into consideration */
 size_t first, last; /* index of the first character and last character */
 int start_point = 0, end_point = 0; /* bool; whether to consider a starting or ending string */
@@ -1174,12 +1175,12 @@ int start_point = 0, end_point = 0; /* bool; whether to consider a starting or e
     }
 
     if ((linecount > 0) && (options.endstring==NULL)) {
-      *lines = linecount;
-      *bytes = linecount * (max + 1);
+      *lines += linecount;
+      *bytes += linecount * (max + 1);
     }
     else {
-      *lines = temp;
-      *bytes = temp * (max + 1);
+      *lines += temp;
+      *bytes += temp * (max + 1);
     }
 
     if (output_unicode!=0) {
@@ -2639,7 +2640,7 @@ pthread_t threads;
 
     if (strncmp(argv[i], "-f", 2) == 0) { /* user specified a charset.lst */
       if (i+1 < argc) {
-        charsetfilename = calloc(strlen(argv[i+1]), sizeof(char));
+        charsetfilename = calloc(strlen(argv[i+1])+1, sizeof(char));
         if (charsetfilename == NULL) {
           fprintf(stderr,"can't allocate memory for charsetfilename\n");
           exit(EXIT_FAILURE);
@@ -2860,8 +2861,8 @@ pthread_t threads;
     }
 
     if (strncmp(argv[i], "-u", 2) == 0) {  /* suppress filesize info */
-      fprintf(stderr,"Notice: The -u switch is no longer necessary when piping to another program\n\n");
-      /* Although they may not like the 3 second sleep */
+      fprintf(stderr,"Disabling printpercentage thread.  NOTE: MUST be last option\n\n");
+      flag4=0;
       i--;
     }
 
@@ -2906,15 +2907,40 @@ pthread_t threads;
       exit(EXIT_FAILURE);
     }
   }
-  
+
   if (startblock != NULL && endstring != NULL) {
     for (temp = 0; temp < wcslen(startblock); temp++) {
-      if (startblock[temp] > endstring[temp]) {
+
+/*Added by mr.atreat@gmail.com
+  The previous endstring function was broken because it used the ASCII/unicode
+  values to check if endstring was greater than startblock. This revision uses
+  the actual input charset character order to determine which is greater. */
+      wchar_t startcharsrch = startblock[temp];
+      wchar_t * startpos;
+      startpos = wcschr(charset, startcharsrch);
+      int startplace = startpos - charset;
+
+      wchar_t endcharsrch = endstring[temp];
+      wchar_t * endpos;
+      endpos = wcschr(charset, endcharsrch);
+      int endplace = endpos - charset;
+
+      if (startplace > endplace) {
+        fprintf(stderr,"End string must be greater than start string\n");
+        exit(EXIT_FAILURE);
+      }
+      if (startplace < endplace)
+	break;
+
+/*Removed by mr.atreat@gmail.com
+     if (startblock[temp] > endstring[temp]) {
         fprintf(stderr,"End string must be greater than start string\n");
         exit(EXIT_FAILURE);
       }
       if (startblock[temp] < endstring[temp])
-        break;
+       exit(EXIT_FAILURE);
+       break;
+*/
     }
   }
 
