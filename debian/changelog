@@ -1,3 +1,9 @@
+crunch (3.6-1kali1) kali; urgency=low
+
+  * Upstream import
+
+ -- Mati Aharoni <muts@kali.org>  Fri, 23 May 2014 04:40:00 -0400
+
 crunch (3.5-0kali1) kali; urgency=low
 
   * Upstream import
